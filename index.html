@@ -5,23 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CPA Analytics Dashboard</title>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 30px; }
-        .dashboard-container { max-width: 1000px; margin: 0 auto; }
-        h2 { text-align: center; color: #38bdf8; margin-bottom: 30px; font-size: 28px; text-transform: uppercase; letter-spacing: 1px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .card { background-color: #1e293b; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #334155; }
-        .card h3 { margin: 0 0 10px 0; font-size: 16px; color: #94a3b8; text-transform: uppercase; }
-        .card .count { font-size: 36px; font-weight: bold; color: #fff; }
-        .card.visits { border-top: 4px solid #38bdf8; }
-        .card.nexts { border-top: 4px solid #fbbf24; }
-        .card.clicks { border-top: 4px solid #f43f5e; }
-        .btn-group { display: flex; justify-content: center; gap: 15px; margin-top: 10px; }
-        .btn { padding: 12px 25px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-        .btn-refresh { background-color: #38bdf8; color: #0f172a; }
-        .btn-refresh:hover { background-color: #0ea5e9; transform: scale(1.03); }
-        .btn-clear { background-color: #ef4444; color: #fff; }
-        .btn-clear:hover { background-color: #dc2626; transform: scale(1.03); }
-        .loading { text-align: center; color: #94a3b8; font-style: italic; margin-top: 15px; }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background-color: #0f172a; 
+            color: #f8fafc; 
+            margin: 0; 
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .dashboard-container { 
+            width: 100%;
+            max-width: 600px; 
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid #334155;
+            text-align: center;
+        }
+        h2 { 
+            color: #38bdf8; 
+            margin-bottom: 20px; 
+            font-size: 22px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+        }
+        .iframe-wrapper {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #0f172a;
+            border: 2px dashed #334155;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .btn-group { 
+            display: flex; 
+            justify-content: center; 
+            gap: 15px; 
+            margin-top: 20px; 
+        }
+        .btn { 
+            flex: 1;
+            padding: 14px; 
+            font-size: 15px; 
+            font-weight: bold; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+        }
+        .btn-refresh { 
+            background-color: #38bdf8; 
+            color: #0f172a; 
+        }
+        .btn-refresh:hover { 
+            background-color: #0ea5e9; 
+        }
+        .btn-clear { 
+            background-color: #ef4444; 
+            color: #fff; 
+        }
+        .btn-clear:hover { 
+            background-color: #dc2626; 
+        }
     </style>
 </head>
 <body>
@@ -29,97 +85,37 @@
     <div class="dashboard-container">
         <h2>Locanto Live Traffic Tracking</h2>
         
-        <div class="grid">
-            <div class="card visits">
-                <h3>Total Visits</h3>
-                <div class="count" id="totalVisits">0</div>
-            </div>
-            <div class="card nexts">
-                <h3>Next Button Clicks</h3>
-                <div class="count" id="nextClicks">0</div>
-            </div>
-            <div class="card clicks">
-                <h3>Profile Complete Clicks</h3>
-                <div class="count" id="profileClicks">0</div>
-            </div>
+        <!-- এই আইফ্রেমটি সরাসরি গুগলের সিকিউর সার্ভার থেকে মোবাইলের স্ক্রিনে লাইভ ডেটা এনে দেখাবে -->
+        <div class="iframe-wrapper">
+            <iframe id="statsFrame" src="https://script.google.com/macros/s/AKfycbwdznBMxJog_To63rCIln_szACsWet-P3W9-RO6XwfFuLANAHpvlI1NOtv4k5bNM9Xf/exec?action=getStats">
+                Loading Live Data...
+            </iframe>
         </div>
 
         <div class="btn-group">
-            <button class="btn btn-refresh" onclick="loadStats()">Refresh Data</button>
-            <button class="btn btn-clear" onclick="clearStats()">Clear Data</button>
+            <button class="btn btn-refresh" onclick="refreshDashboard()">Refresh Data</button>
+            <button class="btn btn-clear" onclick="clearDashboardData()">Clear Data</button>
         </div>
-        
-        <div class="loading" id="loadingText" style="display:none;">Processing...</div>
     </div>
 
     <script>
-        // আপনার দেওয়া নতুন গুগল অ্যাপস স্ক্রিপ্ট লিংক
-        var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyap6ATxvesA9tvKVLK9zD-bnfyCqrTQGmwGo5kwgZ_aKQvGGg6QYRBAYSl_x_bgvO/exec";
-
-        var offsetVisits = parseInt(localStorage.getItem('offset_visits') || 0);
-        var offsetNexts = parseInt(localStorage.getItem('offset_nexts') || 0);
-        var offsetClicks = parseInt(localStorage.getItem('offset_clicks') || 0);
-
-        // JSONP লোড করার মেইন ফাংশন (কোনো CORS এরর আসবে না)
-        function loadStats() {
-            document.getElementById('loadingText').innerText = "Fetching live data...";
-            document.getElementById('loadingText').style.display = 'block';
-
-            var oldScript = document.getElementById('jsonpScript');
-            if (oldScript) oldScript.remove();
-
-            var script = document.createElement('script');
-            script.id = 'jsonpScript';
-            
-            // গুগল থেকে ডেটা আসার পর এই ফাংশনটি অটোমেটিক রান হবে
-            window.handleGoogleData = function(data) {
-                var displayVisits = Math.max(0, data.visits - offsetVisits);
-                var displayNexts = Math.max(0, data.nextClicks - offsetNexts);
-                var displayClicks = Math.max(0, data.profileClicks - offsetClicks);
-
-                document.getElementById('totalVisits').innerText = displayVisits;
-                document.getElementById('nextClicks').innerText = displayNexts;
-                document.getElementById('profileClicks').innerText = displayClicks;
-                document.getElementById('loadingText').style.display = 'none';
-                
-                window.currentRawVisits = data.visits;
-                window.currentRawNexts = data.nextClicks;
-                window.currentRawClicks = data.profileClicks;
-            };
-
-            script.src = SCRIPT_URL + "?action=getStats";
-            script.onerror = function() {
-                document.getElementById('loadingText').innerText = "Connection error. Please try again.";
-            };
-            document.body.appendChild(script);
+        // রিফ্রেশ বাটন চাপলে আইফ্রেমটি রিলোড হয়ে নতুন ডেটা নিয়ে আসবে
+        function refreshDashboard() {
+            var iframe = document.getElementById('statsFrame');
+            // ক্যাশ এড়ানোর জন্য লিংকের শেষে টাইমস্ট্যাম্প যোগ করা হলো
+            iframe.src = "https://script.google.com/macros/s/AKfycbwdznBMxJog_To63rCIln_szACsWet-P3W9-RO6XwfFuLANAHpvlI1NOtv4k5bNM9Xf/exec?action=getStats&t=" + new Date().getTime();
         }
 
-        // ড্যাশবোর্ডের লোকাল ডেটা ক্লিয়ার করার সিস্টেম
-        function clearStats() {
-            if (confirm("Are you sure you want to clear the dashboard stats?")) {
-                document.getElementById('loadingText').innerText = "Clearing dashboard data...";
-                document.getElementById('loadingText').style.display = 'block';
-                
-                offsetVisits = window.currentRawVisits || 0;
-                offsetNexts = window.currentRawNexts || 0;
-                offsetClicks = window.currentRawClicks || 0;
-
-                localStorage.setItem('offset_visits', offsetVisits);
-                localStorage.setItem('offset_nexts', offsetNexts);
-                localStorage.setItem('offset_clicks', offsetClicks);
-
-                document.getElementById('totalVisits').innerText = 0;
-                document.getElementById('nextClicks').innerText = 0;
-                document.getElementById('profileClicks').innerText = 0;
-                
-                setTimeout(() => {
-                    document.getElementById('loadingText').style.display = 'none';
-                    alert("Dashboard stats cleared successfully!");
-                }, 500);
+        // ক্লিয়ার বাটনের কাজ
+        function clearDashboardData() {
+            if (confirm("Are you sure you want to clear/reset data? (Note: It will clear the actual sheet counter if supported by script)")) {
+                alert("Please clear your Google Sheet rows manually to completely reset the main data.");
+                refreshDashboard();
             }
         }
-
-        window.onload = loadStats;
+        
+        // প্রতি ১০ সেকেন্ড পর পর অটোমেটিক মোবাইল ড্যাশবোর্ড আপডেট হবে
+        setInterval(refreshDashboard, 10000);
     </script>
 </body>
 </html>

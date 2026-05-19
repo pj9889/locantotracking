@@ -53,29 +53,42 @@
         .card.nexts { border-top: 4px solid #fbbf24; }
         .card.clicks { border-top: 4px solid #f43f5e; }
         
-        .btn-refresh {
-            display: block;
-            width: 150px;
-            margin: 0 auto;
-            background-color: #38bdf8;
-            color: #0f172a;
-            border: none;
-            padding: 12px;
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+        .btn {
+            padding: 12px 25px;
             font-size: 16px;
             font-weight: bold;
+            border: none;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
         }
+        .btn-refresh {
+            background-color: #38bdf8;
+            color: #0f172a;
+        }
         .btn-refresh:hover {
             background-color: #0ea5e9;
+            transform: scale(1.03);
+        }
+        .btn-clear {
+            background-color: #ef4444;
+            color: #fff;
+        }
+        .btn-clear:hover {
+            background-color: #dc2626;
             transform: scale(1.03);
         }
         .loading {
             text-align: center;
             color: #94a3b8;
             font-style: italic;
-            margin-top: 10px;
+            margin-top: 15px;
         }
     </style>
 </head>
@@ -99,28 +112,76 @@
             </div>
         </div>
 
-        <button class="btn-refresh" onclick="loadStats()">Refresh Data</button>
-        <div class="loading" id="loadingText" style="display:none;">Fetching live data...</div>
+        <div class="btn-group">
+            <button class="btn btn-refresh" onclick="loadStats()">Refresh Data</button>
+            <button class="btn btn-clear" onclick="clearStats()">Clear Data</button>
+        </div>
+        
+        <div class="loading" id="loadingText" style="display:none;">Processing...</div>
     </div>
 
     <script>
-        var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfV8qYvEQIYGNq5DZi6EVwHZJU9HDzkntHglcims-3X6K0oV1FaLXYfgkVk0jAhEtb/exec";
+        var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxCRBh8GA4FsFEja6EM_6ZcrauZxDKCIdSJevNtwdkYOmlT2t9sjDgbeGKUj08wTaa-/exec";
 
+        // লোকাল ডেটা অফসেট ট্র্যাক করার ভেরিয়েবল (ডেটা ক্লিয়ারের জন্য)
+        var offsetVisits = parseInt(localStorage.getItem('offset_visits') || 0);
+        var offsetNexts = parseInt(localStorage.getItem('offset_nexts') || 0);
+        var offsetClicks = parseInt(localStorage.getItem('offset_clicks') || 0);
+
+        // লাইভ ডেটা লোড করার ফাংশন
         function loadStats() {
+            document.getElementById('loadingText').innerText = "Fetching live data...";
             document.getElementById('loadingText').style.display = 'block';
             
             fetch(SCRIPT_URL + "?action=getStats")
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('totalVisits').innerText = data.visits;
-                    document.getElementById('nextClicks').innerText = data.nextClicks;
-                    document.getElementById('profileClicks').innerText = data.profileClicks;
+                    // মেইন ডেটা থেকে ক্লিয়ার করা অফসেট বাদ দিয়ে শো করা হচ্ছে
+                    var displayVisits = Math.max(0, data.visits - offsetVisits);
+                    var displayNexts = Math.max(0, data.nextClicks - offsetNexts);
+                    var displayClicks = Math.max(0, data.profileClicks - offsetClicks);
+
+                    document.getElementById('totalVisits').innerText = displayVisits;
+                    document.getElementById('nextClicks').innerText = displayNexts;
+                    document.getElementById('profileClicks').innerText = displayClicks;
                     document.getElementById('loadingText').style.display = 'none';
+                    
+                    // বর্তমান টোটাল ভ্যালুগুলো ব্যাকআপ রাখা হচ্ছে রিসেটের সুবিধার জন্য
+                    window.currentRawVisits = data.visits;
+                    window.currentRawNexts = data.nextClicks;
+                    window.currentRawClicks = data.profileClicks;
                 })
                 .catch(error => {
                     console.error('Error fetching data:', error);
                     document.getElementById('loadingText').innerText = "Error loading data. Check console.";
                 });
+        }
+
+        // ড্যাশবোর্ডের রানিং ডেটা রিসেট বা ক্লিয়ার করার ফাংশন
+        function clearStats() {
+            if (confirm("Are you sure you want to clear the dashboard stats?")) {
+                document.getElementById('loadingText').innerText = "Clearing dashboard data...";
+                document.getElementById('loadingText').style.display = 'block';
+                
+                // বর্তমানের সম্পূর্ণ ডেটা অফসেট হিসেবে সেভ করা হচ্ছে
+                offsetVisits = window.currentRawVisits || 0;
+                offsetNexts = window.currentRawNexts || 0;
+                offsetClicks = window.currentRawClicks || 0;
+
+                localStorage.setItem('offset_visits', offsetVisits);
+                localStorage.setItem('offset_nexts', offsetNexts);
+                localStorage.setItem('offset_clicks', offsetClicks);
+
+                // স্ক্রিনে জিরো করে দেওয়া
+                document.getElementById('totalVisits').innerText = 0;
+                document.getElementById('nextClicks').innerText = 0;
+                document.getElementById('profileClicks').innerText = 0;
+                
+                setTimeout(() => {
+                    document.getElementById('loadingText').style.display = 'none';
+                    alert("Dashboard stats cleared successfully!");
+                }, 500);
+            }
         }
 
         window.onload = loadStats;

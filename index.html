@@ -53,41 +53,48 @@
     </div>
 
     <script>
-        var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGOBR5MkZ7ZaTUjU6S48LUZQpJsFSPBPyJApFCfmJb_-ASASYMOczj49jx09zHi81h/exec";
+        // আপনার দেওয়া নতুন গুগল অ্যাপস স্ক্রিপ্ট লিংক
+        var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyap6ATxvesA9tvKVLK9zD-bnfyCqrTQGmwGo5kwgZ_aKQvGGg6QYRBAYSl_x_bgvO/exec";
 
         var offsetVisits = parseInt(localStorage.getItem('offset_visits') || 0);
         var offsetNexts = parseInt(localStorage.getItem('offset_nexts') || 0);
         var offsetClicks = parseInt(localStorage.getItem('offset_clicks') || 0);
 
+        // JSONP লোড করার মেইন ফাংশন (কোনো CORS এরর আসবে না)
         function loadStats() {
             document.getElementById('loadingText').innerText = "Fetching live data...";
             document.getElementById('loadingText').style.display = 'block';
-            
-            fetch(SCRIPT_URL + "?action=getStats", { method: 'GET', redirect: 'follow' })
-                .then(response => {
-                    if (!response.ok) throw new Error('Network error');
-                    return response.json();
-                })
-                .then(data => {
-                    var displayVisits = Math.max(0, data.visits - offsetVisits);
-                    var displayNexts = Math.max(0, data.nextClicks - offsetNexts);
-                    var displayClicks = Math.max(0, data.profileClicks - offsetClicks);
 
-                    document.getElementById('totalVisits').innerText = displayVisits;
-                    document.getElementById('nextClicks').innerText = displayNexts;
-                    document.getElementById('profileClicks').innerText = displayClicks;
-                    document.getElementById('loadingText').style.display = 'none';
-                    
-                    window.currentRawVisits = data.visits;
-                    window.currentRawNexts = data.nextClicks;
-                    window.currentRawClicks = data.profileClicks;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('loadingText').innerText = "Error loading data. Check console.";
-                });
+            var oldScript = document.getElementById('jsonpScript');
+            if (oldScript) oldScript.remove();
+
+            var script = document.createElement('script');
+            script.id = 'jsonpScript';
+            
+            // গুগল থেকে ডেটা আসার পর এই ফাংশনটি অটোমেটিক রান হবে
+            window.handleGoogleData = function(data) {
+                var displayVisits = Math.max(0, data.visits - offsetVisits);
+                var displayNexts = Math.max(0, data.nextClicks - offsetNexts);
+                var displayClicks = Math.max(0, data.profileClicks - offsetClicks);
+
+                document.getElementById('totalVisits').innerText = displayVisits;
+                document.getElementById('nextClicks').innerText = displayNexts;
+                document.getElementById('profileClicks').innerText = displayClicks;
+                document.getElementById('loadingText').style.display = 'none';
+                
+                window.currentRawVisits = data.visits;
+                window.currentRawNexts = data.nextClicks;
+                window.currentRawClicks = data.profileClicks;
+            };
+
+            script.src = SCRIPT_URL + "?action=getStats";
+            script.onerror = function() {
+                document.getElementById('loadingText').innerText = "Connection error. Please try again.";
+            };
+            document.body.appendChild(script);
         }
 
+        // ড্যাশবোর্ডের লোকাল ডেটা ক্লিয়ার করার সিস্টেম
         function clearStats() {
             if (confirm("Are you sure you want to clear the dashboard stats?")) {
                 document.getElementById('loadingText').innerText = "Clearing dashboard data...";

@@ -5,91 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CPA Analytics Dashboard</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
-            margin: 0;
-            padding: 30px;
-        }
-        .dashboard-container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        h2 {
-            text-align: center;
-            color: #38bdf8;
-            margin-bottom: 30px;
-            font-size: 28px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .card {
-            background-color: #1e293b;
-            padding: 25px;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-            border: 1px solid #334155;
-        }
-        .card h3 {
-            margin: 0 0 10px 0;
-            font-size: 16px;
-            color: #94a3b8;
-            text-transform: uppercase;
-        }
-        .card .count {
-            font-size: 36px;
-            font-weight: bold;
-            color: #fff;
-        }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 30px; }
+        .dashboard-container { max-width: 1000px; margin: 0 auto; }
+        h2 { text-align: center; color: #38bdf8; margin-bottom: 30px; font-size: 28px; text-transform: uppercase; letter-spacing: 1px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background-color: #1e293b; padding: 25px; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #334155; }
+        .card h3 { margin: 0 0 10px 0; font-size: 16px; color: #94a3b8; text-transform: uppercase; }
+        .card .count { font-size: 36px; font-weight: bold; color: #fff; }
         .card.visits { border-top: 4px solid #38bdf8; }
         .card.nexts { border-top: 4px solid #fbbf24; }
         .card.clicks { border-top: 4px solid #f43f5e; }
-        
-        .btn-group {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 10px;
-        }
-        .btn {
-            padding: 12px 25px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-refresh {
-            background-color: #38bdf8;
-            color: #0f172a;
-        }
-        .btn-refresh:hover {
-            background-color: #0ea5e9;
-            transform: scale(1.03);
-        }
-        .btn-clear {
-            background-color: #ef4444;
-            color: #fff;
-        }
-        .btn-clear:hover {
-            background-color: #dc2626;
-            transform: scale(1.03);
-        }
-        .loading {
-            text-align: center;
-            color: #94a3b8;
-            font-style: italic;
-            margin-top: 15px;
-        }
+        .btn-group { display: flex; justify-content: center; gap: 15px; margin-top: 10px; }
+        .btn { padding: 12px 25px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .btn-refresh { background-color: #38bdf8; color: #0f172a; }
+        .btn-refresh:hover { background-color: #0ea5e9; transform: scale(1.03); }
+        .btn-clear { background-color: #ef4444; color: #fff; }
+        .btn-clear:hover { background-color: #dc2626; transform: scale(1.03); }
+        .loading { text-align: center; color: #94a3b8; font-style: italic; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -121,9 +53,8 @@
     </div>
 
     <script>
-        var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz32R83F95CcjsHD1O1MxUYnjDR03LYecA-Sc5iS-LhA7w7qR1_IWF-7_GuZIJA1h-M/exec";
+        var SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwGOBR5MkZ7ZaTUjU6S48LUZQpJsFSPBPyJApFCfmJb_-ASASYMOczj49jx09zHi81h/exec";
 
-        // লোকাল ডেটা অফসেট ট্র্যাক করার ভেরিয়েবল
         var offsetVisits = parseInt(localStorage.getItem('offset_visits') || 0);
         var offsetNexts = parseInt(localStorage.getItem('offset_nexts') || 0);
         var offsetClicks = parseInt(localStorage.getItem('offset_clicks') || 0);
@@ -132,8 +63,11 @@
             document.getElementById('loadingText').innerText = "Fetching live data...";
             document.getElementById('loadingText').style.display = 'block';
             
-            fetch(SCRIPT_URL + "?action=getStats")
-                .then(response => response.json())
+            fetch(SCRIPT_URL + "?action=getStats", { method: 'GET', redirect: 'follow' })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network error');
+                    return response.json();
+                })
                 .then(data => {
                     var displayVisits = Math.max(0, data.visits - offsetVisits);
                     var displayNexts = Math.max(0, data.nextClicks - offsetNexts);
@@ -149,7 +83,7 @@
                     window.currentRawClicks = data.profileClicks;
                 })
                 .catch(error => {
-                    console.error('Error fetching data:', error);
+                    console.error('Error:', error);
                     document.getElementById('loadingText').innerText = "Error loading data. Check console.";
                 });
         }
